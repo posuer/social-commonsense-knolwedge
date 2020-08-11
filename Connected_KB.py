@@ -2,9 +2,10 @@ import os
 import csv
 import pickle
 import nltk
+#import networkx as nx
+#import numba as nb
 from tqdm import tqdm
 from nltk.stem import WordNetLemmatizer 
-
 
 class Connected_KB(object):
     def __init__(self):
@@ -12,6 +13,7 @@ class Connected_KB(object):
         self.ConceptNet = {}
         self.ATOMIC_Events = {}
         self.ATOMIC_Infers = {}
+        #self.G = nx.MultiGraph()
 
         self.lemmatizer = WordNetLemmatizer() 
         try:
@@ -52,7 +54,7 @@ class Connected_KB(object):
         return keywords_lem
 
     def get_keywords_from_text(self, text): #for QA text
-        stopwords = ['ourselves', 'hers', 'between', 'yourself', 'but', 'again', 'there', 'about', 'once', 'during', 'out', 'very', 'having', 'with', 'they', 'own', 'an', 'be', 'some', 'for', 'do', 'its', 'yours', 'such', 'into', 'of', 'most', 'itself', 'other', 'off', 'is', 's', 'am', 'or', 'who', 'as', 'from', 'him', 'each', 'the', 'themselves', 'until', 'below', 'are', 'we', 'these', 'your', 'his', 'through', 'don', 'nor', 'me', 'were', 'her', 'more', 'himself', 'this', 'down', 'should', 'our', 'their', 'while', 'above', 'both', 'up', 'to', 'ours', 'had', 'she', 'all', 'no', 'when', 'at', 'any', 'before', 'them', 'same', 'and', 'been', 'have', 'in', 'will', 'on', 'does', 'yourselves', 'then', 'that', 'because', 'what', 'over', 'why', 'so', 'can', 'did', 'not', 'now', 'under', 'he', 'you', 'herself', 'has', 'just', 'where', 'too', 'only', 'myself', 'which', 'those', 'i', 'after', 'few', 'whom', 't', 'being', 'if', 'theirs', 'my', 'against', 'a', 'by', 'doing', 'it', 'how', 'further', 'was', 'here', 'than']
+        stopwords = ["n't",'ourselves', 'hers', 'between', 'yourself', 'but', 'again', 'there', 'about', 'once', 'during', 'out', 'very', 'having', 'with', 'they', 'own', 'an', 'be', 'some', 'for', 'do', 'its', 'yours', 'such', 'into', 'of', 'most', 'itself', 'other', 'off', 'is', 's', 'am', 'or', 'who', 'as', 'from', 'him', 'each', 'the', 'themselves', 'until', 'below', 'are', 'we', 'these', 'your', 'his', 'through', 'don', 'nor', 'me', 'were', 'her', 'more', 'himself', 'this', 'down', 'should', 'our', 'their', 'while', 'above', 'both', 'up', 'to', 'ours', 'had', 'she', 'all', 'no', 'when', 'at', 'any', 'before', 'them', 'same', 'and', 'been', 'have', 'in', 'will', 'on', 'does', 'yourselves', 'then', 'that', 'because', 'what', 'over', 'why', 'so', 'can', 'did', 'not', 'now', 'under', 'he', 'you', 'herself', 'has', 'just', 'where', 'too', 'only', 'myself', 'which', 'those', 'i', 'after', 'few', 'whom', 't', 'being', 'if', 'theirs', 'my', 'against', 'a', 'by', 'doing', 'it', 'how', 'further', 'was', 'here', 'than']
         keywords = [word for (word, pos) in nltk.pos_tag(nltk.word_tokenize(text.lower())) if pos[:2] in ['NN', 'JJ', 'VB', "RB"] and word not in stopwords ]
         keywords_lem = set([self.lemmatizer.lemmatize(word) for word in keywords])
         return keywords_lem
@@ -70,7 +72,17 @@ class Connected_KB(object):
                     return word_lem
         
         return None
+   
+    def search_path_byEntity1(self, start_word, end_word, max_hops): 
+        start_word = self.__lemmatize_word(start_word)
+        end_word = self.__lemmatize_word(end_word)
+        if not (start_word and end_word):
+            return None
 
+        paths = nx.all_simple_paths(self.G, source=('conceptnet', start_word), target=('conceptnet',end_word), cutoff=max_hops)
+        return paths
+    
+    
     def search_path_byEntity(self, start_word, end_word, max_hops): 
         start_word = self.__lemmatize_word(start_word)
         end_word = self.__lemmatize_word(end_word)
@@ -84,7 +96,7 @@ class Connected_KB(object):
         }
         visited = set()
         all_path = []
- 
+        #@nb.jit()  
         def search_all_path(path, this_kb_type, key, rel_w_parent, direction):
             visited.add((this_kb_type, key))
             path.append({
@@ -97,9 +109,9 @@ class Connected_KB(object):
             if this_kb_type == 'conceptnet' and key == end_word: #if found destination in conceptnet node
                 all_path.append(list(path))
             elif end_word in connected_KB[this_kb_type][key]['conceptnet']: #if found destination in event or infer node
-                if len(path)>=2 and path[-2]["kb_type"] != 'conceptnet':
+                if len(path)>=2 and path[-2]["kb_type"] != 'conceptnet': #avoid last two hop be "concept - event/infer", when less than maxhops
                     all_path.append(list(path))
-            elif len(path) <= max_hops:
+            elif len(path) <= max_hops and len(all_path) <= 1000:
                 this_node = connected_KB[this_kb_type][key]
 
                 for kb_type, relations in this_node.items():
@@ -109,7 +121,7 @@ class Connected_KB(object):
                                 if (kb_type, neighbor["tail"]) not in visited:
                                     search_all_path(path, kb_type, neighbor["tail"], neighbor["rel"], neighbor["direction"])
 
-                        elif kb_type == 'atomic_event' or kb_type == 'atomic_infer' and len(path)!=max_hops: #avoid last two hop be "concept - event/infer"
+                        elif kb_type == 'atomic_event' or kb_type == 'atomic_infer' and len(path)!=max_hops: #avoid last two hop be "concept - event/infer", purne searching space
                             for neighbor in relations:
                                 if (kb_type, neighbor) not in visited:
                                     search_all_path(path, kb_type, neighbor, None, None)
@@ -150,10 +162,12 @@ class Connected_KB(object):
         pass
 
     def kb_load(self):
-        if os.path.exists("ConceptNet_en_QA.pickle") and os.path.exists("ATOMIC_v4_Events.pickle") and os.path.exists("ATOMIC_v4_Infers.pickle"):
+        if os.path.exists("ConceptNet_en_QA.pickle") and os.path.exists("ATOMIC_v4_Events.pickle") and os.path.exists("ATOMIC_v4_Infers.pickle"):# and os.path.exists("ATOMIC_ConceptNet_wholeGraph.pickle"):
             self.ConceptNet = pickle.load(open( "ConceptNet_en_QA.pickle", "rb" ))
             self.ATOMIC_Events = pickle.load(open( "ATOMIC_v4_Events.pickle", "rb" ))
             self.ATOMIC_Infers = pickle.load(open( "ATOMIC_v4_Infers.pickle", "rb" ))
+            #self.G = pickle.load(open( "ATOMIC_ConceptNet_wholeGraph.pickle", "rb" ) )
+
         
         else:
             #ConceptNet
@@ -169,11 +183,13 @@ class Connected_KB(object):
 
                         head_key = head[3].lower()
                         tail_key = tail[3].lower()
-                        if head_key not in self.ConceptNet.keys(): self.ConceptNet[head_key] = {"conceptnet":[], "atomic_event":[], "atomic_infer":set()}
+                        if head_key not in self.ConceptNet.keys(): self.ConceptNet[head_key] = {"atomic_event":[], "conceptnet":[], "atomic_infer":set()}
                         self.ConceptNet[head_key]["conceptnet"].append({"rel": relation, "tail": tail_key, 'direction':0 })
-
-                        if tail_key not in self.ConceptNet.keys(): self.ConceptNet[tail_key] = {"conceptnet":[], "atomic_event":[], "atomic_infer":set()}
+                        if tail_key not in self.ConceptNet.keys(): self.ConceptNet[tail_key] = {"atomic_event":[], "conceptnet":[], "atomic_infer":set()}
                         self.ConceptNet[tail_key]["conceptnet"].append({"rel": relation, "tail": head_key, 'direction':1 })
+                        
+                        #self.G.add_edge(('conceptnet',head_key), ('conceptnet',tail_key), rel= relation, head=head_key, tail=tail_key  )
+                        #self.G.add_edge(('conceptnet',tail_key), ('conceptnet',head_key), {'rel': relation, 'head':head_key, 'tail':tail_key } )
 
 
             #ATOMIC
@@ -191,28 +207,44 @@ class Connected_KB(object):
                     for i in infers:
                         infers_clear.append([self.__format_atomic_infer(x) for x in i if x != 'none'])   
                     
-                    self.ATOMIC_Events[event]= {"atomic_infer": dict( [(rel, infer) for rel, infer in zip(relations, infers_clear)]), "conceptnet":set()}
+                    self.ATOMIC_Events[event]= {"atomic_infer": dict( [(rel, set(infer)) for rel, infer in zip(relations, infers_clear)]), "conceptnet":set()}
                     
+                    #for rel, infers in zip(relations, infers_clear):
+                        #self.G.add_node(('atomic', event, infer, rel) )
+                        #for infer in infers:
+                        #    self.G.add_edge(('atomic_event', event), ("atomic_infer", infer), rel=rel) 
+
             for key, value in tqdm(self.ATOMIC_Events.items()):
                 for prefix in value["atomic_infer"]["prefix"]:
                     word_lem = self.__lemmatize_word(prefix)
                     if word_lem:
                         self.ConceptNet[word_lem]["atomic_event"].append(key)
                         self.ATOMIC_Events[key]["conceptnet"].add(word_lem)
+                        
+                        #self.G.add_edge(('atomic_event', key), ("conceptnet", word_lem)) 
+
                 for inf_key, inf_value in value["atomic_infer"].items():
                     if inf_key != "prefix":
                         for infer_phrase in inf_value:
+                            #self.G.add_edge(('conceptnet', word_lem), ('atomic', key, infer_phrase, inf_key) )
+
                             if infer_phrase not in self.ATOMIC_Infers.keys():  self.ATOMIC_Infers[infer_phrase] = {"conceptnet":set(), "atomic_event":[]}
                             self.ATOMIC_Infers[infer_phrase]["atomic_event"].append({"rel":inf_key,"tail":key})
+
                             for conceptnet_key in self.__get_keywords_from_text(infer_phrase):
                                 word_lem = self.__lemmatize_word(conceptnet_key)
                                 if word_lem:
                                     self.ATOMIC_Infers[infer_phrase]["conceptnet"].add(word_lem)
                                     self.ConceptNet[word_lem]['atomic_infer'].add(infer_phrase)
 
+                                    #self.G.add_edge(('conceptnet', word_lem), ('atomic_infer', infer_phrase) )
+
+
             pickle.dump(self.ConceptNet, open( "ConceptNet_en_QA.pickle", "wb" ) )
             pickle.dump(self.ATOMIC_Events, open( "ATOMIC_v4_Events.pickle", "wb" ) )
             pickle.dump(self.ATOMIC_Infers, open( "ATOMIC_v4_Infers.pickle", "wb" ) )
+            #pickle.dump(self.G, open( "ATOMIC_ConceptNet_wholeGraph.pickle", "wb" ) )
+
             
                
        

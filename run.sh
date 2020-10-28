@@ -1,5 +1,10 @@
+# transformers 3.0.2
+# pytorch 
 # warmup_steps: set to 10~20% steps of one epoch when have small batchsize 
 #               to avoid that model randomly predicts even after epches of trainning
+# do_train: includes dev and test evluation
+# do_eval, do_predict: load a trained model and evaluate on dev or test, 
+# eval_step, save_step: default is evaluating/saving at 1/4, 2/4, 3/4 and 4/4 of each epoch. can set to specific step (int)
 
 # Vanila
 export DATA_DIR=data/socialiqa
@@ -7,17 +12,17 @@ python run_multiple_choice.py \
     --task_name socialiqa \
     --model_name_or_path roberta-large \
     --do_train \
-    --do_eval \
-    --do_predict \
     --data_dir $DATA_DIR \
     --learning_rate 2e-5 \
-    --num_train_epochs 1 \
+    --num_train_epochs 3 \
     --max_seq_length 80 \
     --output_dir output/socialiqa/roberta-large-baseline \
     --per_device_train_batch_size=8 \
     --gradient_accumulation_steps 2 \
     --warmup_steps 200 \
+    --evaluate_during_train \
     --overwrite_output 
+    
 
 # Cleaned
 export DATA_DIR=data/socialiqa_cleaned
@@ -25,8 +30,6 @@ python run_multiple_choice.py \
     --task_name socialiqa \
     --model_name_or_path roberta-large \
     --do_train \
-    --do_eval \
-    --do_predict \
     --data_dir $DATA_DIR \
     --learning_rate 2e-5 \
     --num_train_epochs 1 \
@@ -44,8 +47,6 @@ python run_multiple_choice.py \
     --task_name socialiqa_q2rel \
     --model_name_or_path roberta-large \
     --do_train \
-    --do_eval \
-    --do_predict \
     --data_dir $DATA_DIR \
     --learning_rate 2e-5 \
     --num_train_epochs 1 \
@@ -63,8 +64,6 @@ python run_multiple_choice.py \
     --task_name socialiqa \
     --model_name_or_path roberta-large \
     --do_train \
-    --do_eval \
-    --do_predict \
     --data_dir $DATA_DIR \
     --learning_rate 2e-5 \
     --num_train_epochs 1 \
@@ -83,8 +82,6 @@ python run_multiple_choice.py \
     --task_name socialiqa_q2rel \
     --model_name_or_path roberta-large \
     --do_train \
-    --do_eval \
-    --do_predict \
     --data_dir $DATA_DIR \
     --learning_rate 2e-5 \
     --num_train_epochs 1 \

@@ -32,7 +32,12 @@ from transformers import PreTrainedTokenizer, is_tf_available, is_torch_availabl
 
 import nltk
 from nltk.corpus import stopwords
-stop_words = stopwords.words('english')
+try:
+    stop_words = stopwords.words('english')
+except:
+    nltk.download('stopwords')
+    stop_words = stopwords.words('english')
+
 import spacy
 spacy_nlp = spacy.load("en_core_web_sm")
 

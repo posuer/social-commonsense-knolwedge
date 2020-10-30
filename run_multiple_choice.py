@@ -203,7 +203,7 @@ def main():
             overwrite_cache=data_args.overwrite_cache,
             mode=Split.dev,
         )
-        if training_args.do_eval or training_args.do_train
+        if training_args.do_eval or (training_args.do_train and training_args.evaluate_during_training)
         else None
     )
 
@@ -216,7 +216,7 @@ def main():
             overwrite_cache=data_args.overwrite_cache,
             mode=Split.test,
         )
-        if training_args.do_predict or training_args.do_train
+        if training_args.do_predict or (training_args.do_train and training_args.evaluate_during_training)
         else None
     )
 
@@ -227,10 +227,11 @@ def main():
                 * training_args.gradient_accumulation_steps
                 * (torch.distributed.get_world_size() if training_args.local_rank != -1 else 1)
             )
-    if not training_args.eval_steps:
+    
+    if training_args.evaluate_during_training: 
         training_args.eval_steps = int(len(train_dataset) / training_args.total_train_batch_size / 4)
-    if not training_args.save_steps:
         training_args.save_steps = training_args.eval_steps
+
     logger.info("Training/evaluation parameters %s", training_args)
     logger.info("Model parameters %s", model_args)
     logger.info("Data parameters %s", data_args)
@@ -259,40 +260,40 @@ def main():
         # so that you can share your model easily on huggingface.co/models =)
         if trainer.is_world_master():
             tokenizer.save_pretrained(training_args.output_dir)
-        
-        best_model_dir = os.path.join(training_args.output_dir, f"checkpoint-{trainer.best_step}")
-        best_model = AutoModelForMultipleChoice.from_pretrained(
-            best_model_dir,
-            from_tf=bool(".ckpt" in model_args.model_name_or_path),
-            config=config,
-            cache_dir=model_args.cache_dir,
+
+        if training_args.evaluate_during_training:
+            best_model_dir = os.path.join(training_args.output_dir, f"checkpoint-{trainer.best_step}")
+            best_model = AutoModelForMultipleChoice.from_pretrained(
+                best_model_dir,
+                from_tf=bool(".ckpt" in model_args.model_name_or_path),
+                config=config,
+                cache_dir=model_args.cache_dir,
+            )
+            best_trainer = myTrainer(
+                model=best_model,
+                args=training_args,
+                train_dataset=train_dataset,
+                eval_dataset=eval_dataset,
+                compute_metrics=compute_metrics,
+            )
+            #logger.info("*** Test / Prediction ***")
+
+            output = best_trainer.predict(test_dataset)
+            result = output.metrics
+
+            output_eval_file = os.path.join(training_args.output_dir, "best_test_results.txt")
+            if best_trainer.is_world_master():
+                with open(output_eval_file, "w") as writer:
+                    logger.info(f" best step = {trainer.best_step}")
+                    logger.info(f" best eval acc = {trainer.best_acc:.3f}")
+                    writer.write(f" best step = {trainer.best_step}\n")
+                    writer.write(f" best eval acc = {trainer.best_acc:.3f}\n")
+                    
+                    logger.info("***** Test results *****")
+                    for key, value in result.items():
+                        logger.info("  %s = %s", key.replace("eval","test"), value)
+                        writer.write("%s = %s\n" % (key.replace("eval","test"), value))
             
-        )
-        best_trainer = myTrainer(
-            model=best_model,
-            args=training_args,
-            train_dataset=train_dataset,
-            eval_dataset=eval_dataset,
-            compute_metrics=compute_metrics,
-        )
-        #logger.info("*** Test / Prediction ***")
-
-        output = best_trainer.predict(test_dataset)
-        result = output.metrics
-
-        output_eval_file = os.path.join(training_args.output_dir, "best_test_results.txt")
-        if best_trainer.is_world_master():
-            with open(output_eval_file, "w") as writer:
-                logger.info(f" best step = {trainer.best_step}")
-                logger.info(f" best eval acc = {trainer.best_acc:.3f}")
-                writer.write(f" best step = {trainer.best_step}\n")
-                writer.write(f" best eval acc = {trainer.best_acc:.3f}\n")
-                
-                logger.info("***** Test results *****")
-                for key, value in result.items():
-                    logger.info("  %s = %s", key.replace("eval","test"), value)
-                    writer.write("%s = %s\n" % (key.replace("eval","test"), value))
-        
 
     # Evaluation
     results = {}

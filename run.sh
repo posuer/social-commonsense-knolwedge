@@ -12,6 +12,8 @@ python run_multiple_choice.py \
     --task_name socialiqa \
     --model_name_or_path roberta-large \
     --do_train \
+    --do_eval \
+    --do_predict \
     --data_dir $DATA_DIR \
     --learning_rate 2e-5 \
     --num_train_epochs 3 \
@@ -19,8 +21,8 @@ python run_multiple_choice.py \
     --output_dir output/socialiqa/roberta-large-baseline \
     --per_device_train_batch_size=8 \
     --gradient_accumulation_steps 2 \
+    --evaluate_during_training \
     --warmup_steps 200 \
-    --evaluate_during_train \
     --overwrite_output 
     
 
@@ -38,6 +40,7 @@ python run_multiple_choice.py \
     --per_gpu_eval_batch_size=8 \
     --per_device_train_batch_size=8 \
     --gradient_accumulation_steps 2 \
+    --evaluate_during_training \
     --warmup_steps 200 \
     --overwrite_output
 
@@ -51,10 +54,10 @@ python run_multiple_choice.py \
     --learning_rate 2e-5 \
     --num_train_epochs 1 \
     --max_seq_length 80 \
-    --output_dir output/socialiqa/roberta-large-q2rel \
-    --per_gpu_eval_batch_size=8 \
+    --output_dir output/socialiqa/roberta-large-q2rel2 \
     --per_device_train_batch_size=8 \
     --gradient_accumulation_steps 2 \
+    --evaluate_during_training \
     --warmup_steps 200 \
     --overwrite_output
 
@@ -72,6 +75,7 @@ python run_multiple_choice.py \
     --per_gpu_eval_batch_size=8 \
     --per_device_train_batch_size=8 \
     --gradient_accumulation_steps 2 \
+    --evaluate_during_training \
     --warmup_steps 200 \
     --overwrite_output \
     --margin_loss
@@ -90,6 +94,7 @@ python run_multiple_choice.py \
     --per_gpu_eval_batch_size=8 \
     --per_device_train_batch_size=8 \
     --gradient_accumulation_steps 2 \
+    --evaluate_during_training \
     --warmup_steps 400 \
     --overwrite_output \
     --margin_loss 

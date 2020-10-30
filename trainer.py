@@ -477,7 +477,7 @@ class Trainer:
             epochs_trained, int(num_train_epochs), desc="Epoch", disable=not self.is_local_master()
         )
         for epoch in train_iterator:
-            logger.info("  Tranning Epoch: %d, Global Step: %d", epoch, self.global_step)
+            logger.info(" ********* Training Epoch: %d, Global Step: %d ************", epoch, self.global_step)
 
             if isinstance(train_dataloader, DataLoader) and isinstance(train_dataloader.sampler, DistributedSampler):
                 train_dataloader.sampler.set_epoch(epoch)

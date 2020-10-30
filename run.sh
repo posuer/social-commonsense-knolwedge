@@ -5,6 +5,7 @@
 # do_train: includes dev and test evluation
 # do_eval, do_predict: load a trained model and evaluate on dev or test, 
 # eval_step, save_step: default is evaluating/saving at 1/4, 2/4, 3/4 and 4/4 of each epoch. can set to specific step (int)
+export CUDA_VISIBLE_DEVICES=1
 
 # Vanila
 export DATA_DIR=data/socialiqa
@@ -18,9 +19,9 @@ python run_multiple_choice.py \
     --learning_rate 2e-5 \
     --num_train_epochs 3 \
     --max_seq_length 80 \
-    --output_dir output/socialiqa/roberta-large-baseline \
+    --output_dir output/socialiqa/roberta-large-baseline-epoch3 \
     --per_device_train_batch_size=8 \
-    --gradient_accumulation_steps 2 \
+    --gradient_accumulation_steps 4 \
     --evaluate_during_training \
     --warmup_steps 200 \
     --overwrite_output 
@@ -116,3 +117,35 @@ python run_multiple_choice.py \
     --model_name_or_path $TRAINED_MODEL \
     --output_dir output/socialiqa/roberta-large-eval \
     --overwrite_output  
+# Pretrain on ROCStories Train set
+export TEST_FILE=/path/to/dataset/wiki.test.raw
+export TRAIN_FILE="data/rocstories/ROCStories_winter2017.csv"
+python run_language_modeling.py \
+    --output_dir=output/rocstories/roberta-large-mlm \
+    --model_type=roberta \
+    --model_name_or_path=roberta-large \
+    --num_train_epochs 3 \
+    --do_train \
+    --train_data_file=$TRAIN_FILE \
+    --mlm
+# --do_eval \
+#    --eval_data_file=$TEST_FILE \
+
+# 2. fine-tune on SocialIQa
+export DATA_DIR=data/socialiqa
+python run_multiple_choice.py \
+    --task_name socialiqa \
+    --model_name_or_path output/rocstories/roberta-large-mlm \
+    --do_train \
+    --do_eval \
+    --do_predict \
+    --data_dir $DATA_DIR \
+    --learning_rate 2e-5 \
+    --num_train_epochs 3 \
+    --max_seq_length 80 \
+    --output_dir output/socialiqa/roberta-large-ROCmlm \
+    --per_device_train_batch_size=8 \
+    --gradient_accumulation_steps 2 \
+    --evaluate_during_training \
+    --warmup_steps 200 \
+    --overwrite_output 

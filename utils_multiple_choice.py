@@ -24,7 +24,7 @@ import os
 from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
-
+import csv
 import tqdm
 
 from filelock import FileLock
@@ -418,6 +418,57 @@ class SocialIQaQ2RelProcessor(DataProcessor):
         return "[x"+rel_type+"] " + "[o"+rel_type+"]" if rel_type else None
 
 
+class ROCStoriesProcessor(DataProcessor):
+    """Processor for the ROCStories data set."""
+
+    def get_train_examples(self, data_dir):
+        """See base class."""
+        logger.info("LOOKING AT {} train".format(data_dir))
+        # path = os.path.join(data_dir, "cloze_test_test__spring2016 - cloze_test_ALL_test.csv")
+        # with open(path, 'r', encoding='utf-8') as f:
+        #     data = csv.reader(f)
+        #     data_list = [item for item in data][1:]
+        path = os.path.join(data_dir, "cloze_test_val__spring2016 - cloze_test_ALL_val.csv")
+        with open(path, 'r', encoding='utf-8') as f:
+            data = csv.reader(f)
+            data_list = [item for item in data][1:]
+        # path = os.path.join(data_dir, "cloze_test_test__winter2018-cloze_test_ALL_test - 1.csv")
+        # with open(path, 'r', encoding='utf-8') as f:
+        #     data = csv.reader(f)
+        #     data_list.extend([item for item in data][1:])
+        path = os.path.join(data_dir, "cloze_test_val__winter2018-cloze_test_ALL_val - 1 - 1.csv")
+        with open(path, 'r', encoding='utf-8') as f:
+            data = csv.reader(f)
+            data_list.extend([item for item in data][1:])
+        
+        return self._create_examples(data_list, "train")
+
+    def get_labels(self):
+        """See base class."""
+        return ["1", "2"]
+
+    def _create_examples(self, lines, set_type):
+        """Creates examples for the training and dev sets."""
+        examples = []
+        for idx, line in enumerate(lines):
+            #item = json.loads(line.strip())
+            question_id = "%s-%s" % (set_type, line[0])
+            context = " ".join(line[1:5])
+            question = ""
+            endings = [line[5],line[6]]
+            label = line[7]
+          
+            examples.append(
+                InputExample(
+                    example_id=question_id,
+                    question=question,
+                    contexts=[context,context],
+                    endings=[endings[0], endings[1]],
+                    label=label,
+                )
+            )
+        return examples
+
 
 def convert_examples_to_features(
     examples: List[InputExample],
@@ -491,5 +542,6 @@ def convert_examples_to_features(
 processors = {
     "socialiqa": SocialIQaProcessor,
     "socialiqa_q2rel": SocialIQaQ2RelProcessor,
+    "rocstories_cloze": ROCStoriesProcessor,
     }
-MULTIPLE_CHOICE_TASKS_NUM_LABELS = {"socialiqa", 3, "socialiqa_q2rel", 3}
+MULTIPLE_CHOICE_TASKS_NUM_LABELS = {"socialiqa", 3, "socialiqa_q2rel", 3, "rocstories_cloze", 2}

@@ -262,33 +262,32 @@ def main():
             tokenizer.save_pretrained(training_args.output_dir)
 
         if training_args.evaluate_during_training:
-            best_model_dir = os.path.join(training_args.output_dir, f"checkpoint-{trainer.best_step}")
-            best_model = AutoModelForMultipleChoice.from_pretrained(
-                best_model_dir,
-                from_tf=bool(".ckpt" in model_args.model_name_or_path),
-                config=config,
-                cache_dir=model_args.cache_dir,
-            )
-            best_trainer = myTrainer(
-                model=best_model,
-                args=training_args,
-                train_dataset=train_dataset,
-                eval_dataset=eval_dataset,
-                compute_metrics=compute_metrics,
-            )
             #logger.info("*** Test / Prediction ***")
-
-            output = best_trainer.predict(test_dataset)
-            result = output.metrics
-
             output_eval_file = os.path.join(training_args.output_dir, "best_test_results.txt")
-            if best_trainer.is_world_master():
-                with open(output_eval_file, "w") as writer:
-                    logger.info(f" best step = {trainer.best_step}")
-                    logger.info(f" best eval acc = {trainer.best_acc:.3f}")
-                    writer.write(f" best step = {trainer.best_step}\n")
-                    writer.write(f" best eval acc = {trainer.best_acc:.3f}\n")
-                    
+            
+            with open(output_eval_file, "w") as writer:
+                logger.info(f" best step = {trainer.best_step}")
+                logger.info(f" best eval acc = {trainer.best_acc:.3f}")
+                writer.write(f" best step = {trainer.best_step}\n")
+                writer.write(f" best eval acc = {trainer.best_acc:.3f}\n")
+                
+                if test_dataset:
+                    best_model_dir = os.path.join(training_args.output_dir, f"checkpoint-{trainer.best_step}")
+                    best_model = AutoModelForMultipleChoice.from_pretrained(
+                        best_model_dir,
+                        from_tf=bool(".ckpt" in model_args.model_name_or_path),
+                        config=config,
+                        cache_dir=model_args.cache_dir,
+                    )
+                    best_trainer = myTrainer(
+                        model=best_model,
+                        args=training_args,
+                        train_dataset=train_dataset,
+                        eval_dataset=eval_dataset,
+                        compute_metrics=compute_metrics,
+                    )
+                    output = best_trainer.predict(test_dataset)
+                    result = output.metrics
                     logger.info("***** Test results *****")
                     for key, value in result.items():
                         logger.info("  %s = %s", key.replace("eval","test"), value)

@@ -117,6 +117,16 @@ python run_multiple_choice.py \
     --model_name_or_path $TRAINED_MODEL \
     --output_dir output/socialiqa/roberta-large-eval \
     --overwrite_output  
+# GPT2 on ROCStories Train set
+python run_generation.py \
+    --model_type=gpt2 \
+    --model_name_or_path=gpt2
+    --data_file data/rocstories/ROCStories_spring2016.csv \
+    --num_return_sequences 2 \
+    --overwrite_cache
+
+
+
 # Pretrain on ROCStories Train set
 export TEST_FILE=/path/to/dataset/wiki.test.raw
 export TRAIN_FILE="data/rocstories/ROCStories_winter2017.csv"

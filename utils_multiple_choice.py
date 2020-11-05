@@ -424,25 +424,27 @@ class ROCStoriesProcessor(DataProcessor):
     def get_train_examples(self, data_dir):
         """See base class."""
         logger.info("LOOKING AT {} train".format(data_dir))
-        # path = os.path.join(data_dir, "cloze_test_test__spring2016 - cloze_test_ALL_test.csv")
-        # with open(path, 'r', encoding='utf-8') as f:
-        #     data = csv.reader(f)
-        #     data_list = [item for item in data][1:]
         path = os.path.join(data_dir, "cloze_test_val__spring2016 - cloze_test_ALL_val.csv")
         with open(path, 'r', encoding='utf-8') as f:
             data = csv.reader(f)
             data_list = [item for item in data][1:]
-        # path = os.path.join(data_dir, "cloze_test_test__winter2018-cloze_test_ALL_test - 1.csv")
-        # with open(path, 'r', encoding='utf-8') as f:
-        #     data = csv.reader(f)
-        #     data_list.extend([item for item in data][1:])
         path = os.path.join(data_dir, "cloze_test_val__winter2018-cloze_test_ALL_val - 1 - 1.csv")
         with open(path, 'r', encoding='utf-8') as f:
             data = csv.reader(f)
-            data_list.extend([item for item in data][1:])
+            data_list.extend([item for item in data][1:1500])
         
         return self._create_examples(data_list, "train")
 
+    def get_dev_examples(self, data_dir):
+        """See base class."""
+        logger.info("LOOKING AT {} train".format(data_dir))
+        path = os.path.join(data_dir, "cloze_test_val__winter2018-cloze_test_ALL_val - 1 - 1.csv")
+        with open(path, 'r', encoding='utf-8') as f:
+            data = csv.reader(f)
+            data_list = [item for item in data][1500:]
+        
+        return self._create_examples(data_list, "train")
+        
     def get_labels(self):
         """See base class."""
         return ["1", "2"]

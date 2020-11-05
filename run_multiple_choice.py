@@ -216,7 +216,7 @@ def main():
             overwrite_cache=data_args.overwrite_cache,
             mode=Split.test,
         )
-        if training_args.do_predict or (training_args.do_train and training_args.evaluate_during_training)
+        if training_args.do_predict or (training_args.do_train and training_args.evaluate_during_training and data_args.task_name != "rocstories_cloze" )
         else None
     )
 

@@ -118,6 +118,44 @@ python run_multiple_choice.py \
     --output_dir output/socialiqa/roberta-large-eval \
     --overwrite_output  
 # GPT2 on ROCStories Train set
+
+
+# Pretrain on ROCStories test set
+# 1. fine-tune on ROCStories
+export DATA_DIR=data/rocstories
+python run_multiple_choice.py \
+    --task_name rocstories_cloze \
+    --model_name_or_path roberta-large \
+    --do_train \
+    --data_dir $DATA_DIR \
+    --learning_rate 2e-5 \
+    --num_train_epochs 2 \
+    --max_seq_length 80 \
+    --output_dir output/rocstories/roberta-large-cloze-finetune \
+    --per_device_train_batch_size=8 \
+    --gradient_accumulation_steps 2 \
+    --evaluate_during_training \
+    --warmup_steps 200 \
+    --overwrite_output 
+
+# 2. fine-tune on SocialIQa
+export DATA_DIR=data/socialiqa
+python run_multiple_choice.py \
+    --task_name socialiqa \
+    --model_name_or_path output/rocstories/roberta-large-cloze-finetune \
+    --do_train \
+    --do_eval \
+    --do_predict \
+    --data_dir $DATA_DIR \
+    --learning_rate 2e-5 \
+    --num_train_epochs 1 \
+    --max_seq_length 80 \
+    --output_dir output/socialiqa/roberta-large-rocCloze \
+    --per_device_train_batch_size=8 \
+    --gradient_accumulation_steps 2 \
+    --evaluate_during_training \
+    --warmup_steps 200 \
+    --overwrite_output 
 python run_generation.py \
     --model_type=gpt2 \
     --model_name_or_path=gpt2
@@ -127,7 +165,8 @@ python run_generation.py \
 
 
 
-# Pretrain on ROCStories Train set
+# Pretrain RoBERTa Large with ROCStories Train set
+# 1. pretrain roberta large
 export TEST_FILE=/path/to/dataset/wiki.test.raw
 export TRAIN_FILE="data/rocstories/ROCStories_winter2017.csv"
 python run_language_modeling.py \

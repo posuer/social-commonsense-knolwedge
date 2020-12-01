@@ -266,7 +266,8 @@ class SocialIQaProcessor(DataProcessor):
     def get_train_examples(self, data_dir):
         """See base class."""
         logger.info("LOOKING AT {} train".format(data_dir))
-        path = os.path.join(data_dir, "socialIQa_v1.4_trn.jsonl")
+
+        path = os.path.join(data_dir, "socialIQa_v1.4_trn.jsonl" if data_dir.split('/')[1].startswith("socialiqa") else "ROCStories_trn.jsonl")
         with open(path, 'r', encoding='utf-8') as f:
             data = f.readlines()
         return self._create_examples(data, "train")

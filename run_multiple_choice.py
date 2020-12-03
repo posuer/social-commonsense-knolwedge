@@ -228,7 +228,7 @@ def main():
                 * (torch.distributed.get_world_size() if training_args.local_rank != -1 else 1)
             )
     
-    if training_args.evaluate_during_training: 
+    if training_args.do_train and training_args.evaluate_during_training: 
         training_args.eval_steps = int(len(train_dataset) / training_args.total_train_batch_size / 4)
         training_args.save_steps = training_args.eval_steps
 
@@ -310,6 +310,15 @@ def main():
                     writer.write("%s = %s\n" % (key, value))
 
                 results.update(result)
+
+        output = trainer.predict(eval_dataset)
+        preds = output.predictions
+        #import pdb; pdb.set_trace()
+        output_pred_file = os.path.join(training_args.output_dir, "dev_preds.txt")
+        with open(output_pred_file, "w") as writer:
+            for pred in preds:
+                writer.write("%d\n" % (np.argmax(pred)))
+
 
     if training_args.do_predict:
         logger.info("*** Test / Prediction ***")

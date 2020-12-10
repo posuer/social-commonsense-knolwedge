@@ -636,8 +636,6 @@ class Trainer:
         if self.args.margin_loss:
             loss_fct = torch.nn.MultiMarginLoss()
             loss = outputs[0] + loss_fct(outputs[1] , inputs["labels"])
-            import pdb; pdb.set_trace()
-
         else:
             loss = outputs[0]  # model outputs are always tuple in transformers (see doc)
 

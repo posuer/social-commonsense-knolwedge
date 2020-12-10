@@ -632,7 +632,14 @@ class Trainer:
             inputs["mems"] = self._past
 
         outputs = model(**inputs)
-        loss = outputs[0]  # model outputs are always tuple in transformers (see doc)
+        #loss = outputs[0]  # model outputs are always tuple in transformers (see doc)
+        if self.args.margin_loss:
+            loss_fct = torch.nn.MultiMarginLoss()
+            loss = outputs[0] + loss_fct(outputs[1] , inputs["labels"])
+            import pdb; pdb.set_trace()
+
+        else:
+            loss = outputs[0]  # model outputs are always tuple in transformers (see doc)
 
         if self.args.past_index >= 0:
             self._past = outputs[self.args.past_index]
@@ -641,7 +648,8 @@ class Trainer:
             loss = loss.mean()  # mean() to average on multi-gpu parallel training
         if self.args.gradient_accumulation_steps > 1:
             loss = loss / self.args.gradient_accumulation_steps
-
+        
+        
         if self.args.fp16:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
                 scaled_loss.backward()

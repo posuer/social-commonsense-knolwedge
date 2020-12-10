@@ -88,6 +88,7 @@ class DataTrainingArguments:
 class myTrainingArguments(TrainingArguments):
     margin_loss: bool = field(default=False, metadata={"help": "Whether to use margin loss instead of cross entropy"})
 
+'''
 class myTrainer(Trainer):
 
     def compute_loss(self, model, inputs):
@@ -97,13 +98,14 @@ class myTrainer(Trainer):
             self._past = outputs[self.args.past_index]
         # We don't use .loss here since the model may return tuples instead of ModelOutput.
         # ranking loss 
+
         if self.args.margin_loss:
             loss_fct = torch.nn.MultiMarginLoss()
             loss = outputs[0] + loss_fct(outputs[1] , inputs["labels"])
         else:
             loss = outputs[0]  # model outputs are always tuple in transformers (see doc)
         return loss
-
+'''
 
 def main():
     # See all possible arguments in src/transformers/training_args.py
@@ -242,7 +244,7 @@ def main():
         return {"acc": simple_accuracy(preds, p.label_ids)}
 
     # Initialize our Trainer
-    trainer = myTrainer(
+    trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,
@@ -279,7 +281,7 @@ def main():
                         config=config,
                         cache_dir=model_args.cache_dir,
                     )
-                    best_trainer = myTrainer(
+                    best_trainer = Trainer(
                         model=best_model,
                         args=training_args,
                         train_dataset=train_dataset,
@@ -292,8 +294,13 @@ def main():
                     for key, value in result.items():
                         logger.info("  %s = %s", key.replace("eval","test"), value)
                         writer.write("%s = %s\n" % (key.replace("eval","test"), value))
+                    
+                    preds = output.predictions
+                    output_pred_file = os.path.join(training_args.output_dir, "best_dev_preds.txt")
+                    with open(output_pred_file, "w") as writer:
+                        for pred in preds:
+                            writer.write("%d\n" % (np.argmax(pred)))
             
-
     # Evaluation
     results = {}
     if training_args.do_eval:
@@ -313,8 +320,7 @@ def main():
 
         output = trainer.predict(eval_dataset)
         preds = output.predictions
-        #import pdb; pdb.set_trace()
-        output_pred_file = os.path.join(training_args.output_dir, "dev_preds.txt")
+        output_pred_file = os.path.join(training_args.output_dir, "last_dev_preds.txt")
         with open(output_pred_file, "w") as writer:
             for pred in preds:
                 writer.write("%d\n" % (np.argmax(pred)))

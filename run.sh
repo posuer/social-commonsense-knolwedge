@@ -5,7 +5,23 @@
 # do_train: includes dev and test evluation
 # do_eval, do_predict: load a trained model and evaluate on dev or test, 
 # eval_step, save_step: default is evaluating/saving at 1/4, 2/4, 3/4 and 4/4 of each epoch. can set to specific step (int)
-export CUDA_VISIBLE_DEVICES=1
+export CUDA_VISIBLE_DEVICES=0
+export DATA_DIR=data/socialiqa_category
+python run_classification.py \
+    --task_name socialiqa_class \
+    --model_name_or_path roberta-large \
+    --do_train \
+    --do_eval \
+    --data_dir $DATA_DIR \
+    --learning_rate 2e-5 \
+    --num_train_epochs 3 \
+    --max_seq_length 80 \
+    --output_dir output/socialiqa_class/roberta-large-baseline-epoch3 \
+    --per_device_train_batch_size=8 \
+    --gradient_accumulation_steps 4 \
+    --evaluate_during_training \
+    --overwrite_output 
+
 
 # Vanila
 export DATA_DIR=data/socialiqa
@@ -51,15 +67,17 @@ python run_multiple_choice.py \
     --task_name socialiqa_q2rel \
     --model_name_or_path roberta-large \
     --do_train \
+    --do_eval \
+    --do_predict \
     --data_dir $DATA_DIR \
     --learning_rate 2e-5 \
-    --num_train_epochs 1 \
+    --num_train_epochs 2 \
     --max_seq_length 80 \
     --output_dir output/socialiqa/roberta-large-q2rel2 \
     --per_device_train_batch_size=8 \
-    --gradient_accumulation_steps 2 \
+    --gradient_accumulation_steps 4 \
     --evaluate_during_training \
-    --warmup_steps 200 \
+    --warmup_steps 400 \
     --overwrite_output
 
 # Margin Loss
@@ -68,16 +86,17 @@ python run_multiple_choice.py \
     --task_name socialiqa \
     --model_name_or_path roberta-large \
     --do_train \
+    --do_eval \
+    --do_predict \
     --data_dir $DATA_DIR \
     --learning_rate 2e-5 \
-    --num_train_epochs 1 \
+    --num_train_epochs 2 \
     --max_seq_length 80 \
-    --output_dir output/socialiqa/roberta-large-marginloss \
-    --per_gpu_eval_batch_size=8 \
+    --output_dir output/socialiqa/roberta-large-marginloss3 \
     --per_device_train_batch_size=8 \
-    --gradient_accumulation_steps 2 \
+    --gradient_accumulation_steps 4 \
     --evaluate_during_training \
-    --warmup_steps 200 \
+    --warmup_steps 400 \
     --overwrite_output \
     --margin_loss
 
@@ -87,14 +106,15 @@ python run_multiple_choice.py \
     --task_name socialiqa_q2rel \
     --model_name_or_path roberta-large \
     --do_train \
+    --do_eval \
+    --do_predict \
     --data_dir $DATA_DIR \
     --learning_rate 2e-5 \
-    --num_train_epochs 1 \
+    --num_train_epochs 2 \
     --max_seq_length 80 \
-    --output_dir output/socialiqa/roberta-large-marginloss_q2rel \
-    --per_gpu_eval_batch_size=8 \
+    --output_dir output/socialiqa/roberta-large-marginloss_q2rel2 \
     --per_device_train_batch_size=8 \
-    --gradient_accumulation_steps 2 \
+    --gradient_accumulation_steps 4 \
     --evaluate_during_training \
     --warmup_steps 400 \
     --overwrite_output \
@@ -159,9 +179,9 @@ python run_multiple_choice.py \
 # Use GPT2 to generate QA examples for ROCStories Train set
 # 0. finetune GPT2 with ROCStories Train set
 export CUDA_VISIBLE_DEVICES=1
-export TRAIN_FILE="data/rocstories/ROCStories_spring2016.csv"
+export TRAIN_FILE="data/rocstories/ROCStories_1617.csv"
 python run_language_modeling.py \
-    --output_dir=output/rocstories/gpt2_finetune \
+    --output_dir=output/rocstories/gpt2_finetune1617 \
     --model_type=gpt2 \
     --model_name_or_path=gpt2 \
     --num_train_epochs 3 \
@@ -173,18 +193,18 @@ python run_language_modeling.py \
 export CUDA_VISIBLE_DEVICES=0
 python run_generation.py \
     --model_type=gpt2 \
-    --model_name_or_path=gpt2 \
+    --model_name_or_path=output/rocstories/gpt2_finetune1617 \
     --num_return_sequences 2 \
-    --data_file data/rocstories/ROCStories_winter2017.csv \
-    --output_dir data/rocstories_qa_finetunedGPT2 \
+    --data_file data/rocstories/ROCStories_1617.csv \
+    --output_dir data/rocstories_qa_1617finetunedGPT2 \
     --length_penalty 6 \
     --length 15 \
     --overwrite_cache
 
 # 2. fine-tune on ROCStories Train QA set
 # move socialIQa_v1.4_tst.jsonl and socialIQa_v1.4_dev.jsonl to the the data directory
-export CUDA_VISIBLE_DEVICES=0,1
-export DATA_DIR=data/rocstories_qa_GPT2generated
+export CUDA_VISIBLE_DEVICES=0
+export DATA_DIR=data/rocstories_qa_1617random_socialiqa
 python run_multiple_choice.py \
     --task_name socialiqa \
     --model_name_or_path roberta-large \
@@ -195,7 +215,7 @@ python run_multiple_choice.py \
     --learning_rate 2e-5 \
     --num_train_epochs 2 \
     --max_seq_length 80 \
-    --output_dir output/rocstories/roberta-large-1617GPT2generated_trainQA_finetune \
+    --output_dir output/socialiqa/roberta-large-roc1617random_socialiqa \
     --per_device_train_batch_size=8 \
     --gradient_accumulation_steps 2 \
     --evaluate_during_training \
@@ -278,3 +298,22 @@ python run_multiple_choice.py \
     --evaluate_during_training \
     --warmup_steps 200 \
     --overwrite_output 
+
+
+# Eval and output predict result
+export CUDA_VISIBLE_DEVICES=1
+export DATA_DIR=data/socialiqa
+python run_multiple_choice.py \
+    --task_name socialiqa_q2rel \
+    --model_name_or_path output/socialiqa/roberta-large-marginQ2rel-ROCtrainQA-1617random \
+    --do_eval \
+    --data_dir $DATA_DIR \
+    --learning_rate 2e-5 \
+    --num_train_epochs 2 \
+    --max_seq_length 80 \
+    --output_dir output/socialiqa/roberta-large-marginQ2rel-ROCtrainQA-1617random_pred \
+    --per_device_train_batch_size=8 \
+    --gradient_accumulation_steps 4 \
+    --warmup_steps 400 \
+    --overwrite_output \
+    --margin_loss

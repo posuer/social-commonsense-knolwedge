@@ -1,0 +1,15 @@
+numpy==1.19.1
+tqdm==4.48.2
+dataclasses==0.7
+nltk==3.5
+filelock==3.0.12
+pyspellchecker==0.5.5
+tensorflow==2.2.0
+torch==1.6.0
+spacy==2.3.2
+transformers==3.0.2
+packaging==20.4
+apex==0.9.10dev
+spellchecker==0.4
+tensorboardX==2.1
+wandb==0.10.8

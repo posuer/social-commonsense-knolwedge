@@ -43,12 +43,12 @@ if is_torch_tpu_available():
     import torch_xla.distributed.parallel_loader as pl
 
 try:
-    from torch.utils.tensorboard import SummaryWriter
+    from tensorboardX import SummaryWriter
 
     _has_tensorboard = True
 except ImportError:
     try:
-        from tensorboardX import SummaryWriter
+        from torch.utils.tensorboard import SummaryWriter
 
         _has_tensorboard = True
     except ImportError:
@@ -336,7 +336,8 @@ class Trainer:
                 "weight_decay": 0.0,
             },
         ]
-        optimizer = AdamW(optimizer_grouped_parameters, lr=self.args.learning_rate, eps=self.args.adam_epsilon)
+        #import pdb; pdb.set_trace()
+        optimizer = AdamW(optimizer_grouped_parameters, lr=self.args.learning_rate, eps=self.args.adam_epsilon, weight_decay=self.args.weight_decay)
         scheduler = get_linear_schedule_with_warmup(
             optimizer, num_warmup_steps=self.args.warmup_steps, num_training_steps=num_training_steps
         )
@@ -544,7 +545,7 @@ class Trainer:
                             self.best_acc = eval_metrics['eval_acc']
                             self.best_step = self.global_step
 
-                    if self.args.save_steps > 0 and self.global_step % self.args.save_steps == 0:
+                    if self.args.save_steps > 0 and self.global_step % self.args.save_steps == 0 and self.best_step == self.global_step:
                         # In all cases (even distributed/parallel), self.model is always a reference
                         # to the model we want to save.
                         if hasattr(model, "module"):
@@ -617,7 +618,7 @@ class Trainer:
             # logger.info(output)
             # logger.info(f"***** Eval results Epoch: {self.epoch:.2f}, Step: {self.global_step} *****")
             for key, value in output.items():
-                logger.info(f"  {key} = {value:.3f}")
+                logger.info(f"  {key} = {value:.3f}" if value is float else str(value))
         
 
     def _training_step(

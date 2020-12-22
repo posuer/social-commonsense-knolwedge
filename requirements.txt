@@ -4,7 +4,7 @@ dataclasses==0.7
 nltk==3.5
 filelock==3.0.12
 pyspellchecker==0.5.5
-tensorflow==2.2.0
+tensorflow==2.4.0
 torch==1.6.0
 spacy==2.3.2
 transformers==3.0.2

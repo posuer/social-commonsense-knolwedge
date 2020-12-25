@@ -161,7 +161,7 @@ class SocialIQaClassProcessor(DataProcessor):
         """See base class."""
         logger.info("LOOKING AT {} train".format(data_dir))
 
-        path = os.path.join(data_dir, "socialIQa_dev_v0.1.jsonl")
+        path = os.path.join(data_dir, "trn.jsonl")
         with open(path, 'r', encoding='utf-8') as f:
             data = f.readlines()
         return self._create_examples(data, "train")
@@ -169,7 +169,7 @@ class SocialIQaClassProcessor(DataProcessor):
     def get_dev_examples(self, data_dir):
         """See base class."""
         logger.info("LOOKING AT {} train".format(data_dir))
-        path = os.path.join(data_dir, "socialIQa_dev_v0.1.jsonl")
+        path = os.path.join(data_dir, "dev.jsonl")
         with open(path, 'r', encoding='utf-8') as f:
             data = f.readlines()
         return self._create_examples(data, "dev")
@@ -177,7 +177,7 @@ class SocialIQaClassProcessor(DataProcessor):
     def get_test_examples(self, data_dir):
         """See base class."""
         logger.info("LOOKING AT {} train".format(data_dir))
-        path = os.path.join(data_dir, "socialIQa_v1.4_tst.jsonl")
+        path = os.path.join(data_dir, "tst.jsonl")
         with open(path, 'r', encoding='utf-8') as f:
             data = f.readlines()
         return self._create_examples(data, "test")
@@ -189,10 +189,11 @@ class SocialIQaClassProcessor(DataProcessor):
     def _create_examples(self, lines, set_type):
         """Creates examples for the training and dev sets."""
 
-        dev_count = {key:0 for key in self.get_labels()}
+        #dev_count = {key:0 for key in self.get_labels()}
 
-        dev_examples = []
-        train_examples = []
+        # dev_examples = []
+        # train_examples = []
+        examples = []
 
         for idx, line in enumerate(lines):
             item = json.loads(line.strip())
@@ -202,10 +203,7 @@ class SocialIQaClassProcessor(DataProcessor):
             endings = [item["answerA"],item["answerB"],item["answerC"] ]
             label = item["correct"]
             category = item["category"]
-            if category != " ":
-                if dev_count[category] < 10 :
-                    dev_count[category] += 1
-                    dev_examples.append(
+            examples.append(
                         InputExample(
                             guid=question_id,
                             text_a = context,
@@ -213,16 +211,28 @@ class SocialIQaClassProcessor(DataProcessor):
                             label = category
                         )
                     )
-                elif dev_count[category] >= 10:
-                    train_examples.append(
-                        InputExample(
-                            guid=question_id,
-                            text_a = context,
-                            text_b = '\t'.join([question, endings[0]+".", endings[1]+".", endings[2]+"."]),
-                            label = category
-                        )
-                    )
-        return train_examples if set_type == "train" else dev_examples
+
+            # if category != " ":
+            #     if dev_count[category] < 10 :
+            #         dev_count[category] += 1
+            #         dev_examples.append(
+            #             InputExample(
+            #                 guid=question_id,
+            #                 text_a = context,
+            #                 text_b = '\t'.join([question, endings[0]+".", endings[1]+".", endings[2]+"."]),
+            #                 label = category
+            #             )
+            #         )
+            #     elif dev_count[category] >= 10:
+            #         train_examples.append(
+            #             InputExample(
+            #                 guid=question_id,
+            #                 text_a = context,
+            #                 text_b = '\t'.join([question, endings[0]+".", endings[1]+".", endings[2]+"."]),
+            #                 label = category
+            #             )
+            #         )
+        return examples #train_examples if set_type == "train" else dev_examples
 
 
 

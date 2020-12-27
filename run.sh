@@ -119,6 +119,11 @@ python run_multiple_choice.py \
     --warmup_steps 400 \
     --overwrite_output \
     --margin_loss 
+
+# Category
+--task_name socialiqa_category
+--task_name socialiqa_q2rel_category
+
     
 # Eval
 export DATA_DIR=data/socialiqa_cleaned

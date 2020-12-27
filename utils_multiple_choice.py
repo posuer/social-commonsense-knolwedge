@@ -313,6 +313,170 @@ class SocialIQaProcessor(DataProcessor):
             )
         return examples
 
+class SocialIQaCatgProcessor(DataProcessor):
+    """Processor for the RACE data set."""
+
+    def get_train_examples(self, data_dir):
+        """See base class."""
+        logger.info("LOOKING AT {} train".format(data_dir))
+        newpath = os.path.join(data_dir, "socialIQa_v1.4_trn.jsonl")
+        with open(newpath, 'r', encoding='utf-8') as f:
+            data = f.readlines()
+        return self._create_examples(data, "train")
+
+    def get_dev_examples(self, data_dir):
+        """See base class."""
+        logger.info("LOOKING AT {} train".format(data_dir))
+        newpath = os.path.join(data_dir, "socialIQa_v1.4_dev.jsonl")
+        with open(newpath, 'r', encoding='utf-8') as f:
+            data = f.readlines()
+        return self._create_examples(data, "dev")
+
+    def get_test_examples(self, data_dir):
+        """See base class."""
+        logger.info("LOOKING AT {} train".format(data_dir))
+        newpath = os.path.join(data_dir, "socialIQa_v1.4_tst.jsonl")
+        with open(newpath, 'r', encoding='utf-8') as f:
+            data = f.readlines()
+        return self._create_examples(data, "test")
+
+    def get_labels(self):
+        """See base class."""
+        return ["A", "B", "C"]
+
+    def _create_examples(self, lines, set_type):
+        """Creates examples for the training and dev sets."""
+        #writer = open(f"data/socialiqa_q2rel/socialIQa_v1.4_{set_type}.jsonl", "w", encoding="utf-8")
+        examples = []
+        for idx, line in enumerate(lines):
+            item = json.loads(line.strip())
+            question_id = "%s-%s" % (set_type, idx)
+            context = item["context"]
+            question = item["question"]
+            endings = [item["answerA"],item["answerB"],item["answerC"] ]
+            label = item["correct"]
+            category = item["category"]
+
+            examples.append(
+                InputExample(
+                    example_id=question_id,
+                    question=question,
+                    contexts=[context+" "+category if category else context for _ in range(3)],
+                    endings=[endings[0], endings[1], endings[2]],#, options[3]
+                    label=label,
+                )
+            )
+
+            #item["q2rel"] = rel_type
+            #writer.write(json.dumps(item)+"\n")
+        #writer.close()
+        return examples
+
+
+
+class SocialIQaQ2RelCatgProcessor(DataProcessor):
+    """Processor for the RACE data set."""
+
+    def get_train_examples(self, data_dir):
+        """See base class."""
+        logger.info("LOOKING AT {} train".format(data_dir))
+        newpath = os.path.join(data_dir, "socialIQa_v1.4_trn.jsonl")
+        with open(newpath, 'r', encoding='utf-8') as f:
+            data = f.readlines()
+        return self._create_examples(data, "train")
+
+    def get_dev_examples(self, data_dir):
+        """See base class."""
+        logger.info("LOOKING AT {} train".format(data_dir))
+        newpath = os.path.join(data_dir, "socialIQa_v1.4_dev.jsonl")
+        with open(newpath, 'r', encoding='utf-8') as f:
+            data = f.readlines()
+        return self._create_examples(data, "dev")
+
+    def get_test_examples(self, data_dir):
+        """See base class."""
+        logger.info("LOOKING AT {} train".format(data_dir))
+        newpath = os.path.join(data_dir, "socialIQa_v1.4_tst.jsonl")
+        with open(newpath, 'r', encoding='utf-8') as f:
+            data = f.readlines()
+        return self._create_examples(data, "test")
+
+    def get_labels(self):
+        """See base class."""
+        return ["A", "B", "C"]
+
+    def _create_examples(self, lines, set_type):
+        """Creates examples for the training and dev sets."""
+        #writer = open(f"data/socialiqa_q2rel/socialIQa_v1.4_{set_type}.jsonl", "w", encoding="utf-8")
+        examples = []
+        for idx, line in enumerate(lines):
+            item = json.loads(line.strip())
+            question_id = "%s-%s" % (set_type, idx)
+            context = item["context"]
+            question = item["question"]
+            endings = [item["answerA"],item["answerB"],item["answerC"] ]
+            label = item["correct"]
+            category = item["category"]
+            rel_type = self.question_type_mapping(context, question)
+
+            examples.append(
+                InputExample(
+                    example_id=question_id,
+                    question=question+' '+rel_type if rel_type else question,
+                    contexts=[context+" "+category if category else context for _ in range(3)],
+                    endings=[endings[0], endings[1], endings[2]],#, options[3]
+                    label=label,
+                )
+            )
+
+            #item["q2rel"] = rel_type
+            #writer.write(json.dumps(item)+"\n")
+        #writer.close()
+        return examples
+
+    def question_type_mapping(self, context_text, question_text):
+        #"oEffect","oReact","oWant","xAttr","xEffect","xIntent","xNeed","xReact","xWant"
+
+        rel_type = None
+        context_text = context_text[0].upper() + context_text[1:]
+        question_text_lower = question_text.lower()
+        if "describe" in question_text_lower or "think of" in question_text_lower:
+            return "[xAttr]"
+        elif "need to do before" in question_text_lower:
+            return "[xNeed]"
+        elif "why" in question_text_lower:
+            return "[xIntent]"
+        elif "feel" in question_text_lower:
+            rel_type = 'React'
+        elif "want" in question_text_lower or "do next" in question_text_lower:
+            rel_type = 'Want'
+        elif "happen" in question_text_lower or "experiencing" in question_text_lower:
+            rel_type = 'Effect'
+        
+        if rel_type and "other" in question_text_lower:
+            return "[o"+rel_type+"]"
+        if rel_type and "'s" in question_text_lower and "what's" not in question_text_lower:
+            #print(context_text, question_text)
+            return "[o"+rel_type+"]"
+
+        doc = spacy_nlp(context_text)
+        sub_toks = [str(tok) for tok in doc if (tok.dep_.startswith("nsubj")) and str(tok)[0].isupper() and str(tok).lower() not in stop_words ]
+        #person_toks = [ent.text.lower() for ent in doc.ents if ent.label_ == "PERSON"]
+        #obj_toks = set([tok.lower() for tok in doc if (tok.dep_ in ["dobj", "pobj"])])
+        question_toks = set(nltk.word_tokenize(question_text))
+        #doc_question = spacy_nlp(question_text)
+        #question_toks = [str(tok) for tok in doc_question if tok.dep_.startswith("nsubj") and str(tok).lower() not in stop_words]
+        
+        if rel_type and sub_toks and question_toks and question_toks & set([sub_toks[0]]):
+            return "[x"+rel_type+"]"
+        elif rel_type and sub_toks:
+            #print("OTHER", context_text, question_text)
+            return "[o"+rel_type+"]"
+        #if rel_type:
+        #    print(context_text, question_text)
+
+        return "[x"+rel_type+"] " + "[o"+rel_type+"]" if rel_type else None
+
 
 
 class SocialIQaQ2RelProcessor(DataProcessor):
@@ -545,5 +709,7 @@ processors = {
     "socialiqa": SocialIQaProcessor,
     "socialiqa_q2rel": SocialIQaQ2RelProcessor,
     "rocstories_cloze": ROCStoriesProcessor,
+    "socialiqa_category": SocialIQaCatgProcessor,
+    "socialiqa_q2rel_category": SocialIQaQ2RelCatgProcessor,
     }
-MULTIPLE_CHOICE_TASKS_NUM_LABELS = {"socialiqa", 3, "socialiqa_q2rel", 3, "rocstories_cloze", 2}
+MULTIPLE_CHOICE_TASKS_NUM_LABELS = {"socialiqa", 3, "socialiqa_q2rel", 3, "rocstories_cloze", 2, }

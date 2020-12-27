@@ -167,11 +167,17 @@ def main():
         #force_download=True,
     )
     
-    additional_special_tokens = ["[oEffect]","[oReact]","[oWant]","[xAttr]","[xEffect]","[xIntent]","[xNeed]","[xReact]","[xWant]"]
+    #prepare spcial tokens for Q2Rel and Category
+    q2rel_special_tokens = ["[oEffect]","[oReact]","[oWant]","[xAttr]","[xEffect]","[xIntent]","[xNeed]","[xReact]","[xWant]"]
+    category_special_tokens = ["[event]","[interaction]","[feeling]","[knolwedge]"]
+    additional_special_tokens = q2rel_special_tokens if data_args.task_name in ["socialiqa_q2rel", "socialiqa_q2rel_category"] else []
+    if data_args.task_name in ["socialiqa_category", "socialiqa_q2rel_category"]:
+        additional_special_tokens.extend(category_special_tokens)
+
     tokenizer = AutoTokenizer.from_pretrained(
         model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path,
         cache_dir=model_args.cache_dir,
-        additional_special_tokens=additional_special_tokens if data_args.task_name == "socialiqa_q2rel" else [],
+        additional_special_tokens=additional_special_tokens,
         #force_download=True,
     )
     model = AutoModelForMultipleChoice.from_pretrained(

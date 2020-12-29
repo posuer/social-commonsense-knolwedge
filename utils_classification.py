@@ -202,13 +202,15 @@ class SocialIQaClassProcessor(DataProcessor):
             question = item["question"]
             endings = [item["answerA"],item["answerB"],item["answerC"] ]
             label = item["correct"]
-            category = item["category"]
+            category = None
+            if "category" in item:
+                category = item["category"]
             examples.append(
                         InputExample(
                             guid=question_id,
                             text_a = context,
                             text_b = '\t'.join([question, endings[0]+".", endings[1]+".", endings[2]+"."]),
-                            label = category
+                            label = category if category else None
                         )
                     )
 

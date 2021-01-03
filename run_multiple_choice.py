@@ -169,7 +169,7 @@ def main():
     
     #prepare spcial tokens for Q2Rel and Category
     q2rel_special_tokens = ["[oEffect]","[oReact]","[oWant]","[xAttr]","[xEffect]","[xIntent]","[xNeed]","[xReact]","[xWant]"]
-    category_special_tokens = ["[event]","[interaction]","[feeling]","[knolwedge]"]
+    category_special_tokens = ["[event]","[interaction]","[feeling]","[knowledge]"]
     additional_special_tokens = q2rel_special_tokens if data_args.task_name in ["socialiqa_q2rel", "socialiqa_q2rel_category"] else []
     if data_args.task_name in ["socialiqa_category", "socialiqa_q2rel_category"]:
         additional_special_tokens.extend(category_special_tokens)

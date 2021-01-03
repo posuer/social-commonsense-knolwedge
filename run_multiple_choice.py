@@ -187,7 +187,7 @@ def main():
         cache_dir=model_args.cache_dir,
         #force_download=True,
     )
-    if data_args.task_name == "socialiqa_q2rel":
+    if data_args.task_name in ["socialiqa_q2rel", "socialiqa_category", "socialiqa_q2rel_category"]:
         model.resize_token_embeddings(len(tokenizer)) 
     # Get datasets
     train_dataset = (

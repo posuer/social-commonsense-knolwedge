@@ -45,6 +45,11 @@ logger = logging.getLogger(__name__)
 def simple_accuracy(preds, labels):
     return (preds == labels).mean()
 
+def write_pred_result(preds, output_pred_file, confidence_threshold):
+    with open(output_pred_file, "w") as writer:
+        for pred in preds:
+            writer.write("%d\n" % (np.argmax(pred)) if np.max(pred) >= confidence_threshold else "-1\n")
+
 
 @dataclass
 class ModelArguments:
@@ -88,6 +93,7 @@ class DataTrainingArguments:
 @dataclass
 class myTrainingArguments(TrainingArguments):
     margin_loss: bool = field(default=False, metadata={"help": "Whether to use margin loss instead of cross entropy"})
+    confidence_threshold: Optional[float] = field(default=-1, metadata={"help": "Only output prediction when logit is higher than threshold"})
 
 
 def main():
@@ -282,11 +288,9 @@ def main():
                         writer.write("%s = %s\n" % (key.replace("eval","test"), value))
                     
                     preds = output.predictions
-                    output_pred_file = os.path.join(training_args.output_dir, "best_dev_preds.txt")
-                    with open(output_pred_file, "w") as writer:
-                        for pred in preds:
-                            writer.write("%d\n" % (np.argmax(pred)))
-            
+                    output_pred_file = os.path.join(training_args.output_dir, "best_test_preds.txt")
+                    write_pred_result(preds, output_pred_file, training_args.confidence_threshold)
+               
     # Evaluation
     results = {}
     if training_args.do_eval:
@@ -307,9 +311,8 @@ def main():
         output = trainer.predict(eval_dataset)
         preds = output.predictions
         output_pred_file = os.path.join(training_args.output_dir, "last_dev_preds.txt")
-        with open(output_pred_file, "w") as writer:
-            for pred in preds:
-                writer.write("%d\n" % (np.argmax(pred)))
+        write_pred_result(preds, output_pred_file, training_args.confidence_threshold)
+
 
 
     if training_args.do_predict:
@@ -326,6 +329,11 @@ def main():
                     logger.info("  %s = %s", key, value)
                     writer.write("%s = %s\n" % (key, value))
                 results.update(result)
+
+        preds = output.predictions
+        output_pred_file = os.path.join(training_args.output_dir, "last_test_preds.txt")
+        write_pred_result(preds, output_pred_file, training_args.confidence_threshold)
+
 
     return results
 

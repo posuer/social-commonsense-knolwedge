@@ -161,7 +161,7 @@ class SocialIQaClassProcessor(DataProcessor):
         """See base class."""
         logger.info("LOOKING AT {} train".format(data_dir))
 
-        path = os.path.join(data_dir, "trn.jsonl")
+        path = os.path.join(data_dir, "trn.jsonl" if data_dir.endswith("category") else "socialIQa_v1.4_trn.jsonl")
         with open(path, 'r', encoding='utf-8') as f:
             data = f.readlines()
         return self._create_examples(data, "train")
@@ -169,7 +169,7 @@ class SocialIQaClassProcessor(DataProcessor):
     def get_dev_examples(self, data_dir):
         """See base class."""
         logger.info("LOOKING AT {} train".format(data_dir))
-        path = os.path.join(data_dir, "dev.jsonl")
+        path = os.path.join(data_dir, "dev.jsonl" if data_dir.endswith("category") else "socialIQa_v1.4_dev.jsonl")
         with open(path, 'r', encoding='utf-8') as f:
             data = f.readlines()
         return self._create_examples(data, "dev")
@@ -177,7 +177,7 @@ class SocialIQaClassProcessor(DataProcessor):
     def get_test_examples(self, data_dir):
         """See base class."""
         logger.info("LOOKING AT {} train".format(data_dir))
-        path = os.path.join(data_dir, "tst.jsonl")
+        path = os.path.join(data_dir, "tst.jsonl" if data_dir.endswith("category") else "socialIQa_v1.4_tst.jsonl")
         with open(path, 'r', encoding='utf-8') as f:
             data = f.readlines()
         return self._create_examples(data, "test")

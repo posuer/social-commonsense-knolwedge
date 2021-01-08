@@ -25,6 +25,7 @@ import json
 import numpy as np
 import torch
 from sklearn.metrics import f1_score, classification_report, confusion_matrix
+from scipy.special import softmax
 
 from transformers import (
     AutoConfig,
@@ -48,7 +49,7 @@ def simple_accuracy(preds, labels):
 def write_pred_result(preds, output_pred_file, confidence_threshold):
     with open(output_pred_file, "w") as writer:
         for pred in preds:
-            writer.write("%d\n" % (np.argmax(pred)) if np.max(pred) >= confidence_threshold else "-1\n")
+            writer.write("%d\n" % (np.argmax(pred)) if np.max(softmax(pred)) >= confidence_threshold else "-1\n")
 
 
 @dataclass

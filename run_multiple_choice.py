@@ -279,7 +279,7 @@ def main():
                 writer.write(f" best step = {trainer.best_step}\n")
                 writer.write(f" best eval acc = {trainer.best_acc:.3f}\n")
                 
-                if test_dataset:
+                if test_dataset or eval_dataset:
                     best_model_dir = os.path.join(training_args.output_dir, f"checkpoint-{trainer.best_step}")
                     best_model = AutoModelForMultipleChoice.from_pretrained(
                         best_model_dir,
@@ -290,22 +290,38 @@ def main():
                     best_trainer = Trainer(
                         model=best_model,
                         args=training_args,
-                        train_dataset=train_dataset,
-                        eval_dataset=eval_dataset,
+                        #train_dataset=train_dataset,
+                        #eval_dataset=eval_dataset,
                         compute_metrics=compute_metrics,
                     )
-                    output = best_trainer.predict(test_dataset)
-                    result = output.metrics
-                    logger.info("***** Test results *****")
-                    for key, value in result.items():
-                        logger.info("  %s = %s", key.replace("eval","test"), value)
-                        writer.write("%s = %s\n" % (key.replace("eval","test"), value))
+                    if test_dataset:
+                        output = best_trainer.predict(test_dataset)
+                        result = output.metrics
+                        logger.info("***** Best Test Results *****")
+                        for key, value in result.items():
+                            logger.info("  %s = %s", key.replace("eval","test"), value)
+                            writer.write("%s = %s\n" % (key.replace("eval","test"), value))
+                        
+                        preds = output.predictions
+                        output_pred_file = os.path.join(training_args.output_dir, "best_test_preds.txt")
+                        with open(output_pred_file, "w") as writer_pred:
+                            for pred in preds:
+                                writer_pred.write("%d\n" % (np.argmax(pred)))
                     
-                    preds = output.predictions
-                    output_pred_file = os.path.join(training_args.output_dir, "best_dev_preds.txt")
-                    with open(output_pred_file, "w") as writer:
-                        for pred in preds:
-                            writer.write("%d\n" % (np.argmax(pred)))
+                    if eval_dataset:
+                        output = best_trainer.predict(eval_dataset)
+                        result = output.metrics
+                        logger.info("***** Best Dev Results *****")
+                        for key, value in result.items():
+                            logger.info("  %s = %s", key, value)
+                            writer.write("%s = %s\n" % (key, value))
+                        
+                        preds = output.predictions
+                        output_pred_file = os.path.join(training_args.output_dir, "best_dev_preds.txt")
+                        with open(output_pred_file, "w") as writer_pred:
+                            for pred in preds:
+                                writer_pred.write("%d\n" % (np.argmax(pred)))
+
             
     # Evaluation
     results = {}
@@ -327,9 +343,9 @@ def main():
         output = trainer.predict(eval_dataset)
         preds = output.predictions
         output_pred_file = os.path.join(training_args.output_dir, "last_dev_preds.txt")
-        with open(output_pred_file, "w") as writer:
+        with open(output_pred_file, "w") as writer_pred:
             for pred in preds:
-                writer.write("%d\n" % (np.argmax(pred)))
+                writer_pred.write("%d\n" % (np.argmax(pred)))
 
 
     if training_args.do_predict:
@@ -346,6 +362,12 @@ def main():
                     logger.info("  %s = %s", key, value)
                     writer.write("%s = %s\n" % (key, value))
                 results.update(result)
+        
+        preds = output.predictions
+        output_pred_file = os.path.join(training_args.output_dir, "last_test_preds.txt")
+        with open(output_pred_file, "w") as writer_pred:
+            for pred in preds:
+                writer_pred.write("%d\n" % (np.argmax(pred)))
 
     return results
 

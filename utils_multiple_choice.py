@@ -282,7 +282,7 @@ class SocialIQaProcessor(DataProcessor):
     def get_test_examples(self, data_dir):
         """See base class."""
         logger.info("LOOKING AT {} train".format(data_dir))
-        path = os.path.join(data_dir, "socialIQa_v1.4_tst.jsonl")
+        path = os.path.join(data_dir, "socialiqa.jsonl" if data_dir.endswith("-test") else "socialIQa_v1.4_tst.jsonl" )
         with open(path, 'r', encoding='utf-8') as f:
             data = f.readlines()
         return self._create_examples(data, "test")
@@ -300,7 +300,7 @@ class SocialIQaProcessor(DataProcessor):
             context = item["context"]
             question = item["question"]
             endings = [item["answerA"],item["answerB"],item["answerC"] ]
-            label = item["correct"]
+            label = item["correct"] if "correct" in item else None 
 
             examples.append(
                 InputExample(
@@ -309,7 +309,7 @@ class SocialIQaProcessor(DataProcessor):
                     contexts=[context,context,context],
                     endings=[endings[0], endings[1], endings[2]],
                     label=label,
-                )
+                ) 
             )
         return examples
 
@@ -335,7 +335,7 @@ class SocialIQaCatgProcessor(DataProcessor):
     def get_test_examples(self, data_dir):
         """See base class."""
         logger.info("LOOKING AT {} train".format(data_dir))
-        newpath = os.path.join(data_dir, "socialIQa_v1.4_tst.jsonl")
+        newpath = os.path.join(data_dir, "socialiqa.jsonl" if data_dir.endswith("-test") else "socialIQa_v1.4_tst.jsonl")
         with open(newpath, 'r', encoding='utf-8') as f:
             data = f.readlines()
         return self._create_examples(data, "test")
@@ -354,7 +354,7 @@ class SocialIQaCatgProcessor(DataProcessor):
             context = item["context"]
             question = item["question"]
             endings = [item["answerA"],item["answerB"],item["answerC"] ]
-            label = item["correct"]
+            label = item["correct"] if "correct" in item else None
             category = item["category"]
 
             examples.append(
@@ -396,7 +396,7 @@ class SocialIQaQ2RelCatgProcessor(DataProcessor):
     def get_test_examples(self, data_dir):
         """See base class."""
         logger.info("LOOKING AT {} train".format(data_dir))
-        newpath = os.path.join(data_dir, "socialIQa_v1.4_tst.jsonl")
+        newpath = os.path.join(data_dir, "socialiqa.jsonl" if data_dir.endswith("-test") else "socialIQa_v1.4_tst.jsonl")
         with open(newpath, 'r', encoding='utf-8') as f:
             data = f.readlines()
         return self._create_examples(data, "test")
@@ -415,7 +415,7 @@ class SocialIQaQ2RelCatgProcessor(DataProcessor):
             context = item["context"]
             question = item["question"]
             endings = [item["answerA"],item["answerB"],item["answerC"] ]
-            label = item["correct"]
+            label = item["correct"] if "correct" in item else None
             category = item["category"]
             rel_type = self.question_type_mapping(context, question)
 
@@ -501,7 +501,7 @@ class SocialIQaQ2RelProcessor(DataProcessor):
     def get_test_examples(self, data_dir):
         """See base class."""
         logger.info("LOOKING AT {} train".format(data_dir))
-        newpath = os.path.join(data_dir, "socialIQa_v1.4_tst.jsonl")
+        newpath = os.path.join(data_dir, "socialiqa.jsonl" if data_dir.endswith("-test") else "socialIQa_v1.4_tst.jsonl")
         with open(newpath, 'r', encoding='utf-8') as f:
             data = f.readlines()
         return self._create_examples(data, "test")
@@ -520,7 +520,7 @@ class SocialIQaQ2RelProcessor(DataProcessor):
             context = item["context"]
             question = item["question"]
             endings = [item["answerA"],item["answerB"],item["answerC"] ]
-            label = item["correct"]
+            label = item["correct"] if "correct" in item else None
             rel_type = self.question_type_mapping(context, question)
 
             examples.append(
@@ -679,7 +679,7 @@ def convert_examples_to_features(
 
             choices_inputs.append(inputs)
 
-        label = label_map[example.label]
+        label = label_map[example.label] if example.label else None
 
         input_ids = [x["input_ids"] for x in choices_inputs]
         attention_mask = (

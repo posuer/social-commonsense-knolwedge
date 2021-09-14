@@ -1,5 +1,5 @@
 # Social Commonsense Knolwedge
-Code for Paper "Semantic Categorization of Social Knowledge forCommonsense Question Answering"
+Code for Paper "Semantic Categorization of Social Knowledge for Commonsense Question Answering"
 
 [arXiv](https://arxiv.org/abs/2109.05168)
 

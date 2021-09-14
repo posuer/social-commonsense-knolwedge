@@ -1,7 +1,7 @@
 # Social Commonsense Knolwedge
 Code for Paper "Semantic Categorization of Social Knowledge forCommonsense Question Answering"
 
-[Paper PDF]()
+[arXiv](https://arxiv.org/abs/2109.05168)
 
 - Folder "socialiqa_category" contains part of Social IQa data that are annotated with category label.
 - Main implementation details are mostly in `utils_multiple_choice.py`, and `utils_classification.py`
